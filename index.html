@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Price Difference Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>ALTIN-ALTIN-S1 FARKI</h1>
+	    
+    <div class="controls">
+        <label for="monthSelect">Kaç Aylık Veri:</label>
+        <select id="monthSelect">
+            <option value="1">1 Ay</option>
+            <option value="3">3 Ay</option>
+            <option value="6" selected>6 Ay</option>
+            <option value="12">12 Ay</option>
+        </select>
+    </div>
+    <canvas id="priceChart" width="400" height="200"></canvas>
+
+    <script>
+        const baseUrl = "https://api.investing.com/api/financialdata/historical";
+        const altins1 = "1197643";
+        const gramaltin = "50655";
+
+        async function getFin(code, stDate, endDate) {
+            return await (await fetch(`${baseUrl}/${code}?start-date=${stDate}&end-date=${endDate}&time-frame=Daily&add-missing-rows=false`, {
+                "headers": {
+                    "domain-id": "tr"
+                },
+                "method": "GET",
+                "mode": "cors",
+                "credentials": "omit"
+            })).json();
+        }
+let chart;
+        async function drawChart(month) {
+            const st = new Date();
+            const end = new Date();
+            st.setMonth(st.getMonth() - month);
+
+            const altins1prices = await getFin(altins1, st.toISOString().split("T")[0], end.toISOString().split("T")[0]);
+            const gramaltinprices = await getFin(gramaltin, st.toISOString().split("T")[0], end.toISOString().split("T")[0]);
+
+            const labels = [];
+            const data = [];
+
+            altins1prices.data.forEach((element, index) => {
+               const ga = Number(gramaltinprices.data[index]["last_close"].replaceAll(".", "").replaceAll(",", "."));
+                const ha = Number(element.last_close.replaceAll(".", "").replaceAll(",", "."));
+                labels.push(element.rowDate);
+                data.push(ha - (ga / 100.0));
+            });
+
+            const ctx = document.getElementById('priceChart').getContext('2d');
+               if (chart) chart.destroy();
+			   chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Fiyat Farkı',
+                        data: data,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Altın Fiyat Farkları'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Tarih'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Fiyat Farkı'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+ 
+ document.getElementById("monthSelect").addEventListener("change", function () {
+            const months = parseInt(this.value);
+            drawChart(months);
+        });
+        drawChart(1);
+    </script>
+</body>
+</html>
