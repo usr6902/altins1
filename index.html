@@ -51,7 +51,7 @@ let chart;
                const ga = Number(gramaltinprices.data[index]["last_close"].replaceAll(".", "").replaceAll(",", "."));
                 const ha = Number(element.last_close.replaceAll(".", "").replaceAll(",", "."));
                 labels.push(element.rowDate);
-                data.push(ha - (ga / 100.0));
+                data.push(ha*100/ga);
             });
 
             const ctx = document.getElementById('priceChart').getContext('2d');
