@@ -37,6 +37,9 @@
         }
 let chart;
         async function drawChart(month) {
+	    const altinValues = [];
+	    const gramAltinValues = [];
+
             const st = new Date();
             const end = new Date();
             st.setMonth(st.getMonth() - month);
@@ -47,12 +50,14 @@ let chart;
             const labels = [];
             const data = [];
 
-            altins1prices.data.forEach((element, index) => {
-               const ga = Number(gramaltinprices.data[index]["last_close"].replaceAll(".", "").replaceAll(",", "."));
-                const ha = Number(element.last_close.replaceAll(".", "").replaceAll(",", "."));
-                labels.push(element.rowDate);
-                data.push(ha*100/ga);
-            });
+altins1prices.data.forEach((element, index) => {
+    const ga = Number(gramaltinprices.data[index]["last_close"].replaceAll(".", "").replaceAll(",", "."));
+    const ha = Number(element.last_close.replaceAll(".", "").replaceAll(",", "."));
+    labels.push(element.rowDate);
+    data.push(ha * 100 / ga);
+    altinValues.push(ha.toFixed(2));
+    gramAltinValues.push(ga.toFixed(2));
+});
 
             const ctx = document.getElementById('priceChart').getContext('2d');
                if (chart) chart.destroy();
@@ -70,15 +75,32 @@ let chart;
                 },
                 options: {
                     responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        title: {
-                            display: true,
-                            text: 'Altın Fiyat Farkları'
-                        }
-                    },
+                   
+			plugins: {
+    legend: {
+        position: 'top',
+    },
+    title: {
+        display: true,
+        text: 'Altın Fiyat Farkları'
+    },
+    tooltip: {
+        callbacks: {
+            label: function(context) {
+                const index = context.dataIndex;
+                const fark = context.parsed.y.toFixed(2);
+                const altin = altinValues[index];
+                const gramAltin = gramAltinValues[index];
+                return [
+                    `Fiyat Farkı: ${fark}`,
+                    `ALTINS1: ${altin}`,
+                    `GRAMALTIN: ${gramAltin}`
+                ];
+            }
+        }
+    }
+},
+
                     scales: {
                         x: {
                             title: {
