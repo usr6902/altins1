@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -9,17 +9,36 @@
     body {
       font-family: sans-serif;
       padding: 10px;
+      margin: 0;
     }
+
     .controls {
       margin-bottom: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
     }
+
+    @media (min-width: 600px) {
+      .controls {
+        flex-direction: row;
+        align-items: center;
+      }
+    }
+
     .scroll-container {
       overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-top: 10px;
     }
+
     .chart-wrapper {
-      width: 2000px; /* sabit genişlik, büyük grafikler için */
+      min-width: 600px;
       height: 300px;
     }
+
     canvas {
       width: 100% !important;
       height: 100% !important;
@@ -32,9 +51,9 @@
   <div class="controls">
     <label for="monthSelect">Kaç Aylık Veri:</label>
     <select id="monthSelect">
-      <option value="1">1 Ay</option>
+      <option value="1" selected>1 Ay</option>
       <option value="3">3 Ay</option>
-      <option value="6" selected>6 Ay</option>
+      <option value="6">6 Ay</option>
       <option value="12">12 Ay</option>
     </select>
   </div>
@@ -50,17 +69,43 @@
     const altins1 = "1197643";
     const gramaltin = "50655";
 
+    // Dikey çizgi plugin
+    const verticalLinePlugin = {
+      id: 'verticalLinePlugin',
+      afterDraw: (chart) => {
+        if (chart.tooltip._active && chart.tooltip._active.length) {
+          const ctx = chart.ctx;
+          const x = chart.tooltip._active[0].element.x;
+          const topY = chart.scales.y.top;
+          const bottomY = chart.scales.y.bottom;
+
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(x, topY);
+          ctx.lineTo(x, bottomY);
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([4, 4]);
+          ctx.strokeStyle = 'rgba(255, 99, 132, 0.6)';
+          ctx.shadowColor = 'rgba(0,0,0,0.1)';
+          ctx.shadowBlur = 4;
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+    };
+
     async function getFin(code, stDate, endDate) {
-      return await (
-        await fetch(`${baseUrl}/${code}?start-date=${stDate}&end-date=${endDate}&time-frame=Daily&add-missing-rows=false`, {
+      try {
+        const response = await fetch(`${baseUrl}/${code}?start-date=${stDate}&end-date=${endDate}&time-frame=Daily&add-missing-rows=false`, {
           headers: {
             "domain-id": "tr"
-          },
-          method: "GET",
-          mode: "cors",
-          credentials: "omit"
-        })
-      ).json();
+          }
+        });
+        return await response.json();
+      } catch (error) {
+        console.error("Veri alınamadı:", error);
+        return { data: [] };
+      }
     }
 
     let chart;
@@ -87,11 +132,11 @@
         const ha = Number(element.last_close.replaceAll(".", "").replaceAll(",", "."));
         labels.push(element.rowDate);
         data.push(ha * 100 / ga);
-        altinValues.push((ha*100).toFixed(2));
+        altinValues.push((ha * 100).toFixed(2));
         gramAltinValues.push(ga.toFixed(2));
       });
 
-      // Dinamik genişlik ayarı (50px per data point)
+      // Genişlik ayarı
       const widthPerPoint = 50;
       const totalWidth = labels.length * widthPerPoint;
       document.querySelector(".chart-wrapper").style.width = totalWidth + "px";
@@ -116,6 +161,10 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
           plugins: {
             legend: {
               position: "top"
@@ -159,7 +208,8 @@
               }
             }
           }
-        }
+        },
+        plugins: [verticalLinePlugin]
       });
     }
 
@@ -168,6 +218,7 @@
       drawChart(months);
     });
 
+    // Başlangıçta 1 ay ile başlat
     drawChart(1);
   </script>
 </body>
