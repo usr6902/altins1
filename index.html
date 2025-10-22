@@ -374,7 +374,7 @@
         const gramAltinValues = dataPoints.map(d => d.gramAltinValue);
 
         // İstatistikler
-        const currentRatio = data[data.length - 1].toFixed(2);
+        const currentRatio = data[0].toFixed(2);
         const avgRatio = (data.reduce((a, b) => a + b, 0) / data.length).toFixed(2);
         const maxRatio = Math.max(...data).toFixed(2);
         const minRatio = Math.min(...data).toFixed(2);
