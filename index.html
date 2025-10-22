@@ -298,7 +298,7 @@
         const labels = [];
         const data = [];
 
-        altins1prices.data.forEach((element, index) => {
+/*        altins1prices.data.forEach((element, index) => {
           const ga = Number(gramaltinprices.data[index]["last_close"].replaceAll(".", "").replaceAll(",", "."));
           const ha = Number(element.last_close.replaceAll(".", "").replaceAll(",", "."));
           labels.push(element.rowDate);
@@ -306,6 +306,18 @@
           altinValues.push((ha * 100).toFixed(2));
           gramAltinValues.push(ga.toFixed(2));
         });
+*/
+        // Verileri ters sırada işle (en yeni tarihler sağda olsun)
+        for (let i = altins1prices.data.length - 1; i >= 0; i--) {
+          const element = altins1prices.data[i];
+          const ga = Number(gramaltinprices.data[i]["last_close"].replaceAll(".", "").replaceAll(",", "."));
+          const ha = Number(element.last_close.replaceAll(".", "").replaceAll(",", "."));
+          labels.push(element.rowDate);
+          data.push(ha * 100 / ga);
+          altinValues.push((ha * 100).toFixed(2));
+          gramAltinValues.push(ga.toFixed(2));
+        }
+
 
         // İstatistikler
         const currentRatio = data[data.length - 1].toFixed(2);
