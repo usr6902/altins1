@@ -193,6 +193,13 @@
       margin-top: 20px;
       text-align: center;
     }
+
+    .data-info {
+      text-align: center;
+      color: #888;
+      font-size: 0.85rem;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -224,6 +231,7 @@
       </div>
       <div id="errorMessage" class="error-message" style="display: none;"></div>
       <div id="statsGrid" class="stats-grid" style="display: none;"></div>
+      <div id="dataInfo" class="data-info" style="display: none;"></div>
     </div>
   </div>
 
@@ -254,6 +262,15 @@
       }
     };
 
+    function parsePrice(priceStr) {
+      if (!priceStr) return null;
+      try {
+        return Number(priceStr.toString().replaceAll(".", "").replaceAll(",", "."));
+      } catch {
+        return null;
+      }
+    }
+
     async function getFin(code, stDate, endDate) {
       try {
         const response = await fetch(`${baseUrl}/${code}?start-date=${stDate}&end-date=${endDate}&time-frame=Daily&add-missing-rows=false`, {
@@ -261,7 +278,18 @@
             "domain-id": "tr"
           }
         });
-        return await response.json();
+        
+        if (!response.ok) {
+          throw new Error(`API hatası: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!data || !data.data || !Array.isArray(data.data)) {
+          throw new Error('Geçersiz veri formatı');
+        }
+        
+        return data;
       } catch (error) {
         console.error("Veri alınamadı:", error);
         throw error;
@@ -275,16 +303,15 @@
       const chartWrapper = document.querySelector('.chart-wrapper');
       const errorEl = document.getElementById('errorMessage');
       const statsGrid = document.getElementById('statsGrid');
+      const dataInfo = document.getElementById('dataInfo');
 
       loadingEl.style.display = 'block';
       chartWrapper.style.display = 'none';
       errorEl.style.display = 'none';
       statsGrid.style.display = 'none';
+      dataInfo.style.display = 'none';
 
       try {
-        const altinValues = [];
-        const gramAltinValues = [];
-
         const st = new Date();
         const end = new Date();
         st.setMonth(st.getMonth() - month);
@@ -292,32 +319,59 @@
         const stStr = st.toISOString().split("T")[0];
         const endStr = end.toISOString().split("T")[0];
 
-        const altins1prices = await getFin(altins1, stStr, endStr);
-        const gramaltinprices = await getFin(gramaltin, stStr, endStr);
+        const [altins1prices, gramaltinprices] = await Promise.all([
+          getFin(altins1, stStr, endStr),
+          getFin(gramaltin, stStr, endStr)
+        ]);
 
-        const labels = [];
-        const data = [];
-
-/*        altins1prices.data.forEach((element, index) => {
-          const ga = Number(gramaltinprices.data[index]["last_close"].replaceAll(".", "").replaceAll(",", "."));
-          const ha = Number(element.last_close.replaceAll(".", "").replaceAll(",", "."));
-          labels.push(element.rowDate);
-          data.push(ha * 100 / ga);
-          altinValues.push((ha * 100).toFixed(2));
-          gramAltinValues.push(ga.toFixed(2));
+        // Tarihe göre veri haritası oluştur
+        const gramAltinMap = new Map();
+        gramaltinprices.data.forEach(item => {
+          if (item.rowDate && item.last_close) {
+            gramAltinMap.set(item.rowDate, item.last_close);
+          }
         });
-*/
-        // Verileri ters sırada işle (en yeni tarihler sağda olsun)
-        for (let i = altins1prices.data.length - 1; i >= 0; i--) {
-          const element = altins1prices.data[i];
-          const ga = Number(gramaltinprices.data[i]["last_close"].replaceAll(".", "").replaceAll(",", "."));
-          const ha = Number(element.last_close.replaceAll(".", "").replaceAll(",", "."));
-          labels.push(element.rowDate);
-          data.push(ha * 100 / ga);
-          altinValues.push((ha * 100).toFixed(2));
-          gramAltinValues.push(ga.toFixed(2));
+
+        // Verileri eşleştir ve hesapla
+        const dataPoints = [];
+        
+        altins1prices.data.forEach(element => {
+          const date = element.rowDate;
+          const gramPrice = gramAltinMap.get(date);
+          
+          if (!date || !element.last_close || !gramPrice) {
+            return; // Bu tarihi atla
+          }
+          
+          const ha = parsePrice(element.last_close);
+          const ga = parsePrice(gramPrice);
+          
+          if (ha === null || ga === null || ga === 0) {
+            return; // Geçersiz veri
+          }
+          
+          const ratio = (ha * 100) / ga;
+          
+          dataPoints.push({
+            date: date,
+            ratio: ratio,
+            altinValue: (ha * 100).toFixed(2),
+            gramAltinValue: ga.toFixed(2)
+          });
+        });
+
+        if (dataPoints.length === 0) {
+          throw new Error('Eşleşen veri bulunamadı');
         }
 
+        // Tarihe göre sırala (eskiden yeniye)
+        dataPoints.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        // Grafik verilerini hazırla
+        const labels = dataPoints.map(d => d.date);
+        const data = dataPoints.map(d => d.ratio);
+        const altinValues = dataPoints.map(d => d.altinValue);
+        const gramAltinValues = dataPoints.map(d => d.gramAltinValue);
 
         // İstatistikler
         const currentRatio = data[data.length - 1].toFixed(2);
@@ -343,6 +397,8 @@
             <div class="stat-value">${minRatio}</div>
           </div>
         `;
+
+        dataInfo.textContent = `${dataPoints.length} gün verisi gösteriliyor`;
 
         const ctx = document.getElementById("priceChart").getContext("2d");
         if (chart) chart.destroy();
@@ -445,11 +501,13 @@
         loadingEl.style.display = 'none';
         chartWrapper.style.display = 'block';
         statsGrid.style.display = 'grid';
+        dataInfo.style.display = 'block';
 
       } catch (error) {
+        console.error('Grafik hatası:', error);
         loadingEl.style.display = 'none';
         errorEl.style.display = 'block';
-        errorEl.textContent = '⚠️ Veriler yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.';
+        errorEl.textContent = `⚠️ ${error.message || 'Veriler yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.'}`;
       }
     }
 
