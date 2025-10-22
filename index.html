@@ -3,7 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="theme-color" content="#667eea">
+  <meta name="description" content="ALTIN-S1 ve GRAM ALTIN fiyat oranı analizi">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Altın Analiz">
   <title>Altın Fiyat Analizi</title>
+  <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkFsdMSxbiBGaXlhdCBBbmFsaXppIiwKICAic2hvcnRfbmFtZSI6ICJBbHTEsW4iLAogICJkZXNjcmlwdGlvbiI6ICJBTFRJTi1TMSAvIEdSQU0gQUxUSU4gb3JhbsSxIGFuYWxpemkiLAogICJzdGFydF91cmwiOiAiLyIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiI2ZmZmZmZiIsCiAgInRoZW1lX2NvbG9yIjogIiM2NjdlZWEiLAogICJvcmllbnRhdGlvbiI6ICJwb3J0cmFpdCIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImRhdGE6aW1hZ2Uvc3ZnK3htbCwlM0NzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB2aWV3Qm94PScwIDAgMTAwIDEwMCclM0UlM0NyZWN0IHdpZHRoPScxMDAnIGhlaWdodD0nMTAwJyBmaWxsPSclMjM2NjdlZWEnLyUzRSUzQ3RleHQgeD0nNTAnIHk9JzU1JyBmb250LXNpemU9JzUwJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBmaWxsPSd3aGl0ZSclM0UlRjAlOUYlOTIlQjAlM0MvdGV4dCUzRSUzQy9zdmclM0UiLAogICAgICAic2l6ZXMiOiAiMTkyeDE5MiIsCiAgICAgICJ0eXBlIjogImltYWdlL3N2Zyt4bWwiCiAgICB9LAogICAgewogICAgICAic3JjIjogImRhdGE6aW1hZ2Uvc3ZnK3htbCwlM0NzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB2aWV3Qm94PScwIDAgMTAwIDEwMCclM0UlM0NyZWN0IHdpZHRoPScxMDAnIGhlaWdodD0nMTAwJyBmaWxsPSclMjM2NjdlZWEnLyUzRSUzQ3RleHQgeD0nNTAnIHk9JzU1JyBmb250LXNpemU9JzUwJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBmaWxsPSd3aGl0ZSclM0UlRjAlOUYlOTIlQjAlM0MvdGV4dCUzRSUzQy9zdmclM0UiLAogICAgICAic2l6ZXMiOiAiNTEyeDUxMiIsCiAgICAgICJ0eXBlIjogImltYWdlL3N2Zyt4bWwiCiAgICB9CiAgXQp9">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     * {
@@ -200,10 +206,74 @@
       font-size: 0.85rem;
       margin-top: 10px;
     }
+
+    .install-banner {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .install-banner.show {
+      display: flex;
+    }
+
+    .install-text {
+      flex: 1;
+      font-size: 0.9rem;
+    }
+
+    .install-btn {
+      background: white;
+      color: #667eea;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+      white-space: nowrap;
+    }
+
+    .install-btn:hover {
+      transform: scale(1.05);
+    }
+
+    .install-btn:active {
+      transform: scale(0.95);
+    }
+
+    .offline-indicator {
+      background: #ff6b6b;
+      color: white;
+      padding: 8px;
+      text-align: center;
+      font-size: 0.85rem;
+      display: none;
+    }
+
+    .offline-indicator.show {
+      display: block;
+    }
   </style>
 </head>
 <body>
+  <div class="offline-indicator" id="offlineIndicator">
+    📵 İnternet bağlantısı yok - Önbelleğe alınan veriler gösteriliyor
+  </div>
+
   <div class="container">
+    <div class="install-banner" id="installBanner">
+      <div class="install-text">📱 Bu uygulamayı ana ekranınıza ekleyin</div>
+      <button class="install-btn" id="installBtn">Yükle</button>
+    </div>
+
     <div class="header">
       <h1>📊 Altın Fiyat Analizi</h1>
       <div class="subtitle">ALTIN-S1 / GRAM ALTIN Oranı</div>
@@ -236,6 +306,109 @@
   </div>
 
   <script>
+    // Service Worker Kayıt
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        const swCode = `
+          const CACHE_NAME = 'altin-analiz-v1';
+          const urlsToCache = [
+            'https://cdn.jsdelivr.net/npm/chart.js'
+          ];
+
+          self.addEventListener('install', event => {
+            event.waitUntil(
+              caches.open(CACHE_NAME)
+                .then(cache => cache.addAll(urlsToCache))
+            );
+          });
+
+          self.addEventListener('fetch', event => {
+            event.respondWith(
+              caches.match(event.request)
+                .then(response => {
+                  if (response) {
+                    return response;
+                  }
+                  return fetch(event.request).then(response => {
+                    if (!response || response.status !== 200 || response.type !== 'basic') {
+                      return response;
+                    }
+                    const responseToCache = response.clone();
+                    caches.open(CACHE_NAME)
+                      .then(cache => {
+                        cache.put(event.request, responseToCache);
+                      });
+                    return response;
+                  });
+                })
+            );
+          });
+
+          self.addEventListener('activate', event => {
+            event.waitUntil(
+              caches.keys().then(cacheNames => {
+                return Promise.all(
+                  cacheNames.map(cacheName => {
+                    if (cacheName !== CACHE_NAME) {
+                      return caches.delete(cacheName);
+                    }
+                  })
+                );
+              })
+            );
+          });
+        `;
+
+        const blob = new Blob([swCode], { type: 'application/javascript' });
+        const swUrl = URL.createObjectURL(blob);
+
+        navigator.serviceWorker.register(swUrl)
+          .then(reg => console.log('Service Worker kayıtlı'))
+          .catch(err => console.log('Service Worker hatası:', err));
+      });
+    }
+
+    // PWA Yükleme Prompt
+    let deferredPrompt;
+    const installBanner = document.getElementById('installBanner');
+    const installBtn = document.getElementById('installBtn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBanner.classList.add('show');
+    });
+
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      
+      if (outcome === 'accepted') {
+        installBanner.classList.remove('show');
+      }
+      
+      deferredPrompt = null;
+    });
+
+    window.addEventListener('appinstalled', () => {
+      installBanner.classList.remove('show');
+      deferredPrompt = null;
+    });
+
+    // Çevrimdışı Göstergesi
+    const offlineIndicator = document.getElementById('offlineIndicator');
+
+    window.addEventListener('online', () => {
+      offlineIndicator.classList.remove('show');
+    });
+
+    window.addEventListener('offline', () => {
+      offlineIndicator.classList.add('show');
+    });
+
+    // Altın Fiyat Analizi Kodu
     const baseUrl = "https://api.investing.com/api/financialdata/historical";
     const altins1 = "1197643";
     const gramaltin = "50655";
@@ -324,7 +497,6 @@
           getFin(gramaltin, stStr, endStr)
         ]);
 
-        // Tarihe göre veri haritası oluştur
         const gramAltinMap = new Map();
         gramaltinprices.data.forEach(item => {
           if (item.rowDate && item.last_close) {
@@ -332,7 +504,6 @@
           }
         });
 
-        // Verileri eşleştir ve hesapla
         const dataPoints = [];
         
         altins1prices.data.forEach(element => {
@@ -340,14 +511,14 @@
           const gramPrice = gramAltinMap.get(date);
           
           if (!date || !element.last_close || !gramPrice) {
-            return; // Bu tarihi atla
+            return;
           }
           
           const ha = parsePrice(element.last_close);
           const ga = parsePrice(gramPrice);
           
           if (ha === null || ga === null || ga === 0) {
-            return; // Geçersiz veri
+            return;
           }
           
           const ratio = (ha * 100) / ga;
@@ -364,16 +535,13 @@
           throw new Error('Eşleşen veri bulunamadı');
         }
 
-        // Tarihe göre sırala (eskiden yeniye)
         dataPoints.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-        // Grafik verilerini hazırla
         const labels = dataPoints.map(d => d.date);
         const data = dataPoints.map(d => d.ratio);
         const altinValues = dataPoints.map(d => d.altinValue);
         const gramAltinValues = dataPoints.map(d => d.gramAltinValue);
 
-        // İstatistikler
         const currentRatio = data[0].toFixed(2);
         const avgRatio = (data.reduce((a, b) => a + b, 0) / data.length).toFixed(2);
         const maxRatio = Math.max(...data).toFixed(2);
@@ -516,7 +684,6 @@
       drawChart(months);
     });
 
-    // Ekran boyutu değiştiğinde grafiği yeniden çiz
     let resizeTimer;
     window.addEventListener('resize', () => {
       clearTimeout(resizeTimer);
@@ -528,7 +695,6 @@
       }, 250);
     });
 
-    // Başlangıçta 1 ay ile başlat
     drawChart(1);
   </script>
 </body>
