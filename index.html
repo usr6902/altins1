@@ -2,65 +2,228 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Price Difference Chart</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Altın Fiyat Analizi</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 10px;
+    * {
       margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 15px;
+      color: #333;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      font-size: clamp(1.2rem, 4vw, 1.8rem);
+      color: #667eea;
+      text-align: center;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      font-size: clamp(0.85rem, 2.5vw, 1rem);
+      margin-bottom: 15px;
     }
 
     .controls {
-      margin-bottom: 10px;
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 12px;
+      align-items: stretch;
     }
 
-    @media (min-width: 600px) {
+    @media (min-width: 640px) {
       .controls {
         flex-direction: row;
+        justify-content: center;
         align-items: center;
       }
     }
 
-    .scroll-container {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      margin-top: 10px;
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #f8f9fa;
+      padding: 12px 16px;
+      border-radius: 12px;
+      flex: 1;
+      max-width: 300px;
+      margin: 0 auto;
+    }
+
+    @media (min-width: 640px) {
+      .control-group {
+        margin: 0;
+      }
+    }
+
+    label {
+      font-weight: 600;
+      color: #555;
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+
+    select {
+      flex: 1;
+      padding: 10px 14px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      background: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      outline: none;
+    }
+
+    select:hover {
+      border-color: #667eea;
+    }
+
+    select:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .chart-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
     }
 
     .chart-wrapper {
-      min-width: 600px;
-      height: 300px;
+      position: relative;
+      height: 350px;
+      width: 100%;
+    }
+
+    @media (min-width: 768px) {
+      .chart-wrapper {
+        height: 450px;
+      }
     }
 
     canvas {
-      width: 100% !important;
-      height: 100% !important;
+      max-width: 100%;
+      height: auto !important;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #667eea;
+      font-size: 1.1rem;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(102, 126, 234, 0.3);
+      border-top-color: #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 10px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 15px;
+      border-radius: 12px;
+      text-align: center;
+      color: white;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      opacity: 0.9;
+      margin-bottom: 5px;
+    }
+
+    .stat-value {
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+
+    .error-message {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      color: #856404;
+      padding: 15px;
+      border-radius: 12px;
+      margin-top: 20px;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <h1>ALTIN-ALTIN-S1 FARKI</h1>
+  <div class="container">
+    <div class="header">
+      <h1>📊 Altın Fiyat Analizi</h1>
+      <div class="subtitle">ALTIN-S1 / GRAM ALTIN Oranı</div>
+      
+      <div class="controls">
+        <div class="control-group">
+          <label for="monthSelect">⏱️ Zaman Aralığı:</label>
+          <select id="monthSelect">
+            <option value="1" selected>1 Ay</option>
+            <option value="3">3 Ay</option>
+            <option value="6">6 Ay</option>
+            <option value="12">12 Ay</option>
+          </select>
+        </div>
+      </div>
+    </div>
 
-  <div class="controls">
-    <label for="monthSelect">Kaç Aylık Veri:</label>
-    <select id="monthSelect">
-      <option value="1" selected>1 Ay</option>
-      <option value="3">3 Ay</option>
-      <option value="6">6 Ay</option>
-      <option value="12">12 Ay</option>
-    </select>
-  </div>
-
-  <div class="scroll-container">
-    <div class="chart-wrapper">
-      <canvas id="priceChart"></canvas>
+    <div class="chart-card">
+      <div id="loadingIndicator" class="loading">
+        <div class="loading-spinner"></div>
+        <div>Veriler yükleniyor...</div>
+      </div>
+      <div class="chart-wrapper" style="display: none;">
+        <canvas id="priceChart"></canvas>
+      </div>
+      <div id="errorMessage" class="error-message" style="display: none;"></div>
+      <div id="statsGrid" class="stats-grid" style="display: none;"></div>
     </div>
   </div>
 
@@ -69,7 +232,6 @@
     const altins1 = "1197643";
     const gramaltin = "50655";
 
-    // Dikey çizgi plugin
     const verticalLinePlugin = {
       id: 'verticalLinePlugin',
       afterDraw: (chart) => {
@@ -83,11 +245,9 @@
           ctx.beginPath();
           ctx.moveTo(x, topY);
           ctx.lineTo(x, bottomY);
-          ctx.lineWidth = 1.5;
-          ctx.setLineDash([4, 4]);
-          ctx.strokeStyle = 'rgba(255, 99, 132, 0.6)';
-          ctx.shadowColor = 'rgba(0,0,0,0.1)';
-          ctx.shadowBlur = 4;
+          ctx.lineWidth = 2;
+          ctx.setLineDash([5, 5]);
+          ctx.strokeStyle = 'rgba(102, 126, 234, 0.5)';
           ctx.stroke();
           ctx.restore();
         }
@@ -104,118 +264,198 @@
         return await response.json();
       } catch (error) {
         console.error("Veri alınamadı:", error);
-        return { data: [] };
+        throw error;
       }
     }
 
     let chart;
 
     async function drawChart(month) {
-      const altinValues = [];
-      const gramAltinValues = [];
+      const loadingEl = document.getElementById('loadingIndicator');
+      const chartWrapper = document.querySelector('.chart-wrapper');
+      const errorEl = document.getElementById('errorMessage');
+      const statsGrid = document.getElementById('statsGrid');
 
-      const st = new Date();
-      const end = new Date();
-      st.setMonth(st.getMonth() - month);
+      loadingEl.style.display = 'block';
+      chartWrapper.style.display = 'none';
+      errorEl.style.display = 'none';
+      statsGrid.style.display = 'none';
 
-      const stStr = st.toISOString().split("T")[0];
-      const endStr = end.toISOString().split("T")[0];
+      try {
+        const altinValues = [];
+        const gramAltinValues = [];
 
-      const altins1prices = await getFin(altins1, stStr, endStr);
-      const gramaltinprices = await getFin(gramaltin, stStr, endStr);
+        const st = new Date();
+        const end = new Date();
+        st.setMonth(st.getMonth() - month);
 
-      const labels = [];
-      const data = [];
+        const stStr = st.toISOString().split("T")[0];
+        const endStr = end.toISOString().split("T")[0];
 
-      altins1prices.data.forEach((element, index) => {
-        const ga = Number(gramaltinprices.data[index]["last_close"].replaceAll(".", "").replaceAll(",", "."));
-        const ha = Number(element.last_close.replaceAll(".", "").replaceAll(",", "."));
-        labels.push(element.rowDate);
-        data.push(ha * 100 / ga);
-        altinValues.push((ha * 100).toFixed(2));
-        gramAltinValues.push(ga.toFixed(2));
-      });
+        const altins1prices = await getFin(altins1, stStr, endStr);
+        const gramaltinprices = await getFin(gramaltin, stStr, endStr);
 
-      // Genişlik ayarı
-      const widthPerPoint = 50;
-      const totalWidth = labels.length * widthPerPoint;
-      document.querySelector(".chart-wrapper").style.width = totalWidth + "px";
+        const labels = [];
+        const data = [];
 
-      const ctx = document.getElementById("priceChart").getContext("2d");
-      if (chart) chart.destroy();
+        altins1prices.data.forEach((element, index) => {
+          const ga = Number(gramaltinprices.data[index]["last_close"].replaceAll(".", "").replaceAll(",", "."));
+          const ha = Number(element.last_close.replaceAll(".", "").replaceAll(",", "."));
+          labels.push(element.rowDate);
+          data.push(ha * 100 / ga);
+          altinValues.push((ha * 100).toFixed(2));
+          gramAltinValues.push(ga.toFixed(2));
+        });
 
-      chart = new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: labels,
-          datasets: [{
-            label: "Fiyat Farkı",
-            data: data,
-            borderColor: "rgba(75, 192, 192, 1)",
-            backgroundColor: "rgba(75, 192, 192, 0.2)",
-            borderWidth: 2,
-            pointRadius: 2,
-            pointHoverRadius: 4
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: {
-            mode: 'index',
-            intersect: false
+        // İstatistikler
+        const currentRatio = data[data.length - 1].toFixed(2);
+        const avgRatio = (data.reduce((a, b) => a + b, 0) / data.length).toFixed(2);
+        const maxRatio = Math.max(...data).toFixed(2);
+        const minRatio = Math.min(...data).toFixed(2);
+
+        statsGrid.innerHTML = `
+          <div class="stat-card">
+            <div class="stat-label">Güncel Oran</div>
+            <div class="stat-value">${currentRatio}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Ortalama</div>
+            <div class="stat-value">${avgRatio}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">En Yüksek</div>
+            <div class="stat-value">${maxRatio}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">En Düşük</div>
+            <div class="stat-value">${minRatio}</div>
+          </div>
+        `;
+
+        const ctx = document.getElementById("priceChart").getContext("2d");
+        if (chart) chart.destroy();
+
+        const isMobile = window.innerWidth < 640;
+
+        chart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: labels,
+            datasets: [{
+              label: "Fiyat Oranı",
+              data: data,
+              borderColor: "#667eea",
+              backgroundColor: "rgba(102, 126, 234, 0.1)",
+              borderWidth: 3,
+              pointRadius: isMobile ? 0 : 2,
+              pointHoverRadius: 6,
+              pointBackgroundColor: "#667eea",
+              pointBorderColor: "#fff",
+              pointBorderWidth: 2,
+              tension: 0.4,
+              fill: true
+            }]
           },
-          plugins: {
-            legend: {
-              position: "top"
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: isMobile ? 1.2 : 2,
+            interaction: {
+              mode: 'index',
+              intersect: false
             },
-            title: {
-              display: true,
-              text: "Altın Fiyat Farkları"
+            plugins: {
+              legend: {
+                display: false
+              },
+              title: {
+                display: false
+              },
+              tooltip: {
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                titleColor: '#333',
+                bodyColor: '#666',
+                borderColor: '#667eea',
+                borderWidth: 2,
+                padding: 12,
+                displayColors: false,
+                callbacks: {
+                  title: function(context) {
+                    return context[0].label;
+                  },
+                  label: function(context) {
+                    const index = context.dataIndex;
+                    const fark = context.parsed.y.toFixed(2);
+                    const altin = altinValues[index];
+                    const gramAltin = gramAltinValues[index];
+                    return [
+                      `Oran: ${fark}`,
+                      `ALTIN-S1: ${altin}`,
+                      `GRAM ALTIN: ${gramAltin}`
+                    ];
+                  }
+                }
+              }
             },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  const index = context.dataIndex;
-                  const fark = context.parsed.y.toFixed(2);
-                  const altin = altinValues[index];
-                  const gramAltin = gramAltinValues[index];
-                  return [
-                    `Oran: ${fark}`,
-                    `ALTINS1: ${altin}`,
-                    `GRAMALTIN: ${gramAltin}`
-                  ];
+            scales: {
+              x: {
+                ticks: {
+                  autoSkip: true,
+                  maxTicksLimit: isMobile ? 6 : 12,
+                  maxRotation: 45,
+                  minRotation: 45,
+                  font: {
+                    size: isMobile ? 10 : 11
+                  }
+                },
+                grid: {
+                  display: false
+                }
+              },
+              y: {
+                ticks: {
+                  font: {
+                    size: isMobile ? 10 : 11
+                  },
+                  callback: function(value) {
+                    return value.toFixed(2);
+                  }
+                },
+                grid: {
+                  color: 'rgba(0, 0, 0, 0.05)'
                 }
               }
             }
           },
-          scales: {
-            x: {
-              ticks: {
-                autoSkip: false,
-                maxRotation: 90,
-                minRotation: 45
-              },
-              title: {
-                display: true,
-                text: "Tarih"
-              }
-            },
-            y: {
-              title: {
-                display: true,
-                text: "Fiyat Farkı"
-              }
-            }
-          }
-        },
-        plugins: [verticalLinePlugin]
-      });
+          plugins: [verticalLinePlugin]
+        });
+
+        loadingEl.style.display = 'none';
+        chartWrapper.style.display = 'block';
+        statsGrid.style.display = 'grid';
+
+      } catch (error) {
+        loadingEl.style.display = 'none';
+        errorEl.style.display = 'block';
+        errorEl.textContent = '⚠️ Veriler yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.';
+      }
     }
 
     document.getElementById("monthSelect").addEventListener("change", function () {
       const months = parseInt(this.value);
       drawChart(months);
+    });
+
+    // Ekran boyutu değiştiğinde grafiği yeniden çiz
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (chart) {
+          const months = parseInt(document.getElementById("monthSelect").value);
+          drawChart(months);
+        }
+      }, 250);
     });
 
     // Başlangıçta 1 ay ile başlat
