@@ -540,7 +540,7 @@
           return new Date(year, month - 1, day);
         };
 
-        dataPoints.sort((a, b) => parse(a.date) - parse(b.date));
+        dataPoints.sort((a, b) => parse(b.date) - parse(a.date));
 
 
         const labels = dataPoints.map(d => d.date);
