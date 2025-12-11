@@ -535,7 +535,13 @@
           throw new Error('Eşleşen veri bulunamadı');
         }
 
-        dataPoints.sort((a, b) => new Date(a.date) - new Date(b.date));
+        const parse = d => {
+          const [day, month, year] = d.split(".");
+          return new Date(year, month - 1, day);
+        };
+
+        dataPoints.sort((a, b) => parse(a.date) - parse(b.date));
+
 
         const labels = dataPoints.map(d => d.date);
         const data = dataPoints.map(d => d.ratio);
