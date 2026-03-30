@@ -583,20 +583,53 @@
           type: "line",
           data: {
             labels: labels,
-            datasets: [{
-              label: "Fiyat Oranı",
-              data: data,
-              borderColor: "#667eea",
-              backgroundColor: "rgba(102, 126, 234, 0.1)",
-              borderWidth: 3,
-              pointRadius: isMobile ? 0 : 2,
-              pointHoverRadius: 6,
-              pointBackgroundColor: "#667eea",
-              pointBorderColor: "#fff",
-              pointBorderWidth: 2,
-              tension: 0.4,
-              fill: true
-            }]
+            datasets: [
+              {
+                label: "Oran (ALTIN-S1 / GRAM ALTIN)",
+                data: data,
+                borderColor: "#667eea",
+                backgroundColor: "rgba(102, 126, 234, 0.1)",
+                borderWidth: 3,
+                pointRadius: isMobile ? 0 : 2,
+                pointHoverRadius: 6,
+                pointBackgroundColor: "#667eea",
+                pointBorderColor: "#fff",
+                pointBorderWidth: 2,
+                tension: 0.4,
+                fill: true,
+                yAxisID: 'y',
+              },
+              {
+                label: "ALTIN-S1 (x 100)",
+                data: altinValues,
+                borderColor: "#f59e0b",
+                backgroundColor: "rgba(245, 158, 11, 0.1)",
+                borderWidth: 2,
+                pointRadius: isMobile ? 0 : 2,
+                pointHoverRadius: 6,
+                pointBackgroundColor: "#f59e0b",
+                pointBorderColor: "#fff",
+                pointBorderWidth: 2,
+                tension: 0.4,
+                fill: false,
+                yAxisID: 'y1',
+              },
+              {
+                label: "GRAM ALTIN",
+                data: gramAltinValues,
+                borderColor: "#10b981",
+                backgroundColor: "rgba(16, 185, 129, 0.1)",
+                borderWidth: 2,
+                pointRadius: isMobile ? 0 : 2,
+                pointHoverRadius: 6,
+                pointBackgroundColor: "#10b981",
+                pointBorderColor: "#fff",
+                pointBorderWidth: 2,
+                tension: 0.4,
+                fill: false,
+                yAxisID: 'y1',
+              }
+            ]
           },
           options: {
             responsive: true,
@@ -608,7 +641,12 @@
             },
             plugins: {
               legend: {
-                display: false
+                display: true,
+                position: 'top',
+                labels: {
+                  boxWidth: 12,
+                  padding: 12
+                }
               },
               title: {
                 display: false
@@ -620,21 +658,18 @@
                 borderColor: '#667eea',
                 borderWidth: 2,
                 padding: 12,
-                displayColors: false,
+                displayColors: true,
                 callbacks: {
                   title: function(context) {
                     return context[0].label;
                   },
                   label: function(context) {
-                    const index = context.dataIndex;
-                    const fark = context.parsed.y.toFixed(2);
-                    const altin = altinValues[index];
-                    const gramAltin = gramAltinValues[index];
-                    return [
-                      `Oran: ${fark}`,
-                      `ALTIN-S1: ${altin}`,
-                      `GRAM ALTIN: ${gramAltin}`
-                    ];
+                    const value = Number(context.parsed.y);
+                    if (isNaN(value)) return '';
+                    if (context.dataset.yAxisID === 'y') {
+                      return `${context.dataset.label}: ${value.toFixed(2)}`;
+                    }
+                    return `${context.dataset.label}: ${value.toFixed(2)}`;
                   }
                 }
               }
@@ -655,16 +690,41 @@
                 }
               },
               y: {
+                type: 'linear',
+                position: 'left',
+                title: {
+                  display: true,
+                  text: 'Oran'
+                },
                 ticks: {
                   font: {
                     size: isMobile ? 10 : 11
                   },
                   callback: function(value) {
-                    return value.toFixed(2);
+                    return Number(value).toFixed(2);
                   }
                 },
                 grid: {
                   color: 'rgba(0, 0, 0, 0.05)'
+                }
+              },
+              y1: {
+                type: 'linear',
+                position: 'right',
+                title: {
+                  display: true,
+                  text: 'Fiyat (TL)'
+                },
+                ticks: {
+                  font: {
+                    size: isMobile ? 10 : 11
+                  },
+                  callback: function(value) {
+                    return Number(value).toFixed(2);
+                  }
+                },
+                grid: {
+                  drawOnChartArea: false
                 }
               }
             }
